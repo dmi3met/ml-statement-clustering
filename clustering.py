@@ -13,8 +13,17 @@ from skimage import img_as_float
 # from pylab import imshow
 
 
-def psnr(a,b):  # <-
-    pass
+def psnr(a, b):  # <-
+    maxi = 1
+    sum = 0
+    length = len(a)
+    for i in range(length):
+        for j in range(3):
+            sum += (a[i][j] - b[i][j]) ** 2
+
+    mse = sum / (length*3)
+    result = 10 * np.log10(maxi ** 2 / mse)
+    return result
 
 
 image = imread('parrots.jpg')
@@ -22,20 +31,19 @@ image_data = img_as_float(image)
 x, y, z = image_data.shape
 X = np.reshape(image_data, (x * y, z))
 
-cls = KMeans(init='k-means++', random_state=241,n_clusters=2)
-y_pred = cls.fit_predict(X)
+for n_cl in range(2, 20):
+    cls = KMeans(init='k-means++', random_state=241,n_clusters=n_cl)
+    y_pred = cls.fit_predict(X)
+    X_median = X.copy()
+    X_mean = X.copy()
 
-X_median = X.copy()
-print(cls.n_clusters)
-for i in range(cls.n_clusters):
-    X_median[y_pred==i] = np.median(X[y_pred==i], axis=0)
+    for i in range(cls.n_clusters):
+        X_median[y_pred==i] = np.median(X[y_pred==i], axis=0)
+        X_mean[y_pred == i] = np.mean(X[y_pred == i], axis=0)
 
-print(psnr(image_data, X_median))  # <-
-
-X_mean = X.copy()
-print(cls.n_clusters)
-for i in range(cls.n_clusters):
-    X_mean[y_pred==i] = np.mean(X[y_pred==i], axis=0)
+    print(n_cl)
+    print(psnr(X, X_median))
+    print(psnr(X, X_mean))
 
 #
 # plt.imshow(np.reshape(X_median, (x, y, z)))
